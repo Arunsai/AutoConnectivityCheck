@@ -1,8 +1,67 @@
-$SuccessParams = @{ NoNewLine = $true; ForegroundColor = 'Green' }
-$FailedParams = @{ NoNewLine = $true; ForegroundColor = 'Red' }
-$AllHosts = @((("wsapp15237","wsapp15260"),("wsapp15238","wsapp15261"),("wsapp15239","wsapp15262")),(("wsapp15240","wsapp15263"),("wsapp15241","wsapp15264"),("wsapp15242","wsapp15265")),(("psmpEDN1","psmpEDN2"),("psmpCMN1","psmpCMN2"),("psmpOPNET1","psmpOPNET2")))
+$TargetType = ""
+$SuccessParams = @{ NoNewLine = $false; ForegroundColor = 'Green' }
+$FailedParams = @{ NoNewLine = $false; ForegroundColor = 'Red' }
 
-$AllHosts = @((("wsapp15260","wsapp15263"),("wsapp15238","wsapp15261"),("wsapp15239","wsapp15262")),(("wsapp15240","wsapp15263"),("wsapp15241","wsapp15264"),("wsapp15242","wsapp15265")),(("psmpEDN1","psmpEDN2"),("psmpCMN1","psmpCMN2"),("psmpOPNET1","psmpOPNET2")))
+
+#$M_CPM_EDN = @("wsapp15260","wsapp15263")
+$M_CPM_EDN = @("wsapp15237","wsapp15260")
+$M_CPM_CMN = @("wsapp15238","wsapp15261")
+$CPM_OPNET = @("wsapp15239","wsapp15262")
+
+$M_PSM_EDN = @("wsapp15240","wsapp15263")
+$M_PSM_CMN = @("wsapp15241","wsapp15264")
+$M_PSM_OPNET = @("wsapp15242","wsapp15265")
+
+$M_PSMP_EDN = @("lxclpampsmpedn01","lxexpamnppsmpedn01")
+$M_PSMP_CMN = @("lxclpampsmpcmn01","lxexpamnppsmpcmn01")
+$M_PSMP_OPNET = @("lxclpamnppsmpopnet01","lxexpamnppsmpopnet01")
+
+$P_CPM_EDN = @("wsapp15223","wsapp15249")
+$P_CPM_CMN = @("wsapp15224","wsapp15250")
+$P_CPM_OPNET = @("wsapp15225","wsapp15251")
+
+$P_PSM_EDN = @("wsapp15226","wsapp15227","wsapp15252")
+$P_PSM_CMN = @("wsapp15228","wsapp15229","wsapp15253")
+$P_PSM_OPNET = @("wsapp15230","wsapp15231","wsapp15254")
+
+$P_PSMP_EDN = @("lxclpampsmpedn01","lxclpampsmpedn02","lxexpampsmpedn01")
+$P_PSMP_CMN = @("lxclpampsmpcmn01","lxclpampsmpcmn02","lxexpampsmpcmn01")
+$P_PSMP_OPNET = @("lxclpampsmpopnet01","lxclpampsmpopnet02","lxexpampsmpopnet01")
+
+#$AllHosts = @((("wsapp15237","wsapp15260"),("wsapp15238","wsapp15261"),("wsapp15239","wsapp15262")),(("wsapp15240","wsapp15263"),("wsapp15241","wsapp15264"),("wsapp15242","wsapp15265")),(("psmpEDN1","psmpEDN2"),("psmpCMN1","psmpCMN2"),("psmpOPNET1","psmpOPNET2")))
+#$AllHosts = @((("wsapp15260","wsapp15263"),("wsapp15238","wsapp15261"),("wsapp15239","wsapp15262")),(("wsapp15240","wsapp15263"),("wsapp15241","wsapp15264"),("wsapp15242","wsapp15265")),(("lxclpampsmpedn01","lxclpampsmpedn02","lxexpampsmpedn01"),("psmpCMN1","psmpCMN2"),("psmpOPNET1","psmpOPNET2")))
+#$AllHosts = @((("wsapp15230","wsapp15231"),("wsapp15238","wsapp15261"),("wsapp15239","wsapp15262")),(("wsapp15240","wsapp15263"),("wsapp15241","wsapp15264"),("wsapp15242","wsapp15265")),(("lxclpampsmpedn01","lxclpampsmpedn02","lxexpampsmpedn01"),("psmpCMN1","psmpCMN2"),("psmpOPNET1","psmpOPNET2")))
+
+$All_M_Hosts = @(($M_CPM_EDN,$M_CPM_CMN,$M_CPM_OPNET),($M_PSM_EDN,$M_PSM_CMN,$M_PSM_OPNET),($M_PSMP_EDN,$M_PSMP_CMN,$M_PSMP_OPNET))
+$All_P_Hosts = @(($P_CPM_EDN,$P_CPM_CMN,$P_CPM_OPNET),($P_PSM_EDN,$P_PSM_CMN,$P_PSM_OPNET),($P_PSMP_EDN,$P_PSMP_CMN,$P_PSMP_OPNET))
+
+$AllHosts = @($All_M_Hosts,$All_P_Hosts)
+
+$EnvInputValidation = {
+    try
+    {
+        $FromInput = [int](Read-Host -Prompt 'Specify the Environment number:')
+
+        if ($FromInput -le 0) {
+            Write-Host @FailedParams "Your input has to be a number greater than 0!"
+            & $EnvInputValidation
+        }
+        elseif ($FromInput -ge 3) {
+            Write-Host @FailedParams "Your input has to be a number in above options!"
+            & $EnvInputValidation
+        }
+        else {
+            $FromInput
+        }
+    }
+    catch
+    {
+        Write-Host @FailedParams "Your input has to be a number."
+        & $EnvInputValidation
+    }
+}
+
+
 
 $ComponentInputValidation = {
     try
@@ -52,8 +111,18 @@ $NetworkInputValidation = {
     }
 }
 
+Write-Host "Select the environment`n1. Model`n2. Production";
+$Env = & $EnvInputValidation
+$Env -=1
+
 Write-Host "Select the Component`n1. CPM`n2. PSM`n3. PSMP";
 $Target_Component = & $ComponentInputValidation
+if($Target_Component -eq 3){
+$TargetType = "Unix"
+}
+else{
+$TargetType = "Windows"
+}
 $Target_Component -=1
 
 Write-Host "Select the Network`n1. EDN`n2. CMN`n3. OPNET";
@@ -61,26 +130,68 @@ $Target_Network = & $NetworkInputValidation
 $Target_Network -=1
 
 $Script = Read-Host -Prompt 'Specify the script to run:'
-
-$User = whoami
-$Creds = Get-Credential
-
-$targets = $AllHosts[$Target_Component][$Target_Network]
+$targets = $AllHosts[$Env][$Target_Component][$Target_Network]
 if ($targets.count -le 0){
 Write-Host @FailedParams "No Hosts detected with these options.. Exiting..";
 exit
 }
-Write-Host "Running the script on $targets";
+
+Write-Host @SuccessParams "Selected Targets are: $targets ";
+
+if($TargetType -eq "Unix"){
+#Write-Host @FailedParams "Unix script is WIP... Exiting.";
+#exit
+#$UnixUser = Read-Host -Prompt 'Provide the Unix user name:'
+$UnixUser = 'e006557'
 
 foreach ($Comp in $targets){
+$DestFile = $Comp+"_Telnet_Result.txt"
+Write-Host "Entering $Comp..";
+$Session = New-PSSession -HostName $Comp -UserName $UnixUser
+
+#Copy the files to the remote host
+Write-Host "Copying the script to $Comp..";
+Copy-Item "hosts.txt" -Destination "\home\$UnixUser\" -ToSession $Session
+Copy-Item $Script -Destination "\home\$UnixUser\" -ToSession $Session
+
+Write-Host @SuccessParams "copying the script to $Comp.. IS COMPLETED";
+
+Write-Host "ENTERING THE SESSION to $Comp..";
+Enter-PSSession $Session
+Write-Host @SuccessParams "Inside the session of $Comp..";
+Invoke-Command -Session $Session {chmod +x check_connectiviti.sh}
+Invoke-Command -Session $Session {./check_connectiviti.sh}
+Exit-PSSession
+Copy-Item "\home\$UnixUser\Telnet_Result.txt" -Destination ".\$DestFile" -FromSession $Session
+Write-Host @SuccessParams "Successfully copied the results from $Comp";
+
+#copy the hosts.txt file
+#scp hosts.txt check_connectivity.sh $UnixUser@$Comp:/home/$UnixUser/
+#login to server
+#ssh $UnixUser@$Comp
+#chmod 755 check_connectivity.sh hosts.txt
+#sh check_connectivity.sh
+#exit
+#copy the connectivity_output.txt to server
+#scp $UnixUser@$Comp:/home/$UnixUser/connectivity_output.txt .
+}
+}
+
+else {
+$User = whoami
+$Creds = Get-Credential
+
+Write-Host "Running the script on $targets";
+foreach ($Comp in $targets){
 $DestFile = $Comp+"_Telnet_Result.csv"
-Write-Host "Copying the input file to $Comp..";
 $Session = New-PSSession -ComputerName $Comp -Credential $Creds
+Write-Host "Copying the input file to $Comp..";
+Copy-Item $Script -Destination "C:\Users\$env:username\Documents\" -ToSession $Session
 Copy-Item "Telnet_Input.csv" -Destination "C:\Users\$env:username\Documents\" -ToSession $Session
 Write-Host "Executing script on $Comp..";
-Invoke-Command -ComputerName $Comp -FilePath .\$Script.ps1
-$Session = New-PSSession -ComputerName $Comp -Credential $Creds
+Invoke-Command -ComputerName $Comp -FilePath .\$Script
 Copy-Item "C:\Users\$env:username\Documents\Telnet_Result.csv" -Destination $DestFile -FromSession $Session
 Write-Host "Copied the results from $Comp to this host.";
+}
 }
 Write-Host @SuccessParams "Script execution completed..";
