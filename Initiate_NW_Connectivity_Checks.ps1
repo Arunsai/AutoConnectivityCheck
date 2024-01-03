@@ -1,7 +1,8 @@
 $TargetType = "Windows"
 $TargetPort = "5985"
+$Input_File = "Telnet_Input.csv"
 $SuccessParams = @{ NoNewLine = $false; ForegroundColor = 'Green' }
-$FailedParams = @{ NoNewLine = $false; ForegroundColor = 'Red' }
+$FailedParams = @{ NoNewLine = $true; ForegroundColor = 'Red' }
 
 #Declare CyberArk Component servers
 #$M_CPM_EDN = @("wsapp15260","wsapp15263")
@@ -121,12 +122,12 @@ $Env -=1
 Write-Host "Select the Component`n1. CPM`n2. PSM`n3. PSMP";
 $Target_Component = & $ComponentInputValidation
 if($Target_Component -eq 3){
-$TargetType = "Unix"
-$TargetPort = "22"
+	$TargetType = "Unix"
+	$TargetPort = "22"
 }
 else{
-$TargetType = "Windows"
-$TargetPort = "5985"
+	$TargetType = "Windows"
+	$TargetPort = "5985"
 }
 $Target_Component -=1
 
@@ -135,6 +136,7 @@ $Target_Network = & $NetworkInputValidation
 $Target_Network -=1
 
 $Script = Read-Host -Prompt 'Specify the script to run:'
+#$Script = "check_connectivity.sh"
 #Input gathhering completed
 
 #Retrieve the component servers based on the inputs:
@@ -142,15 +144,14 @@ $targets = $AllHosts[$Env][$Target_Component][$Target_Network]
 
 #Display selected hosts based on the inputs provided
 if ($targets.count -le 0){
-Write-Host @FailedParams "No Hosts detected with these options.. Exiting..";
+	Write-Host @FailedParams "No Hosts detected with these options.. Exiting..";
 exit
 }
-Write-Host @SuccessParams "Selected component servers are: $targets ";
+else {
+	Write-Host @SuccessParams "Selected component servers are: $targets ";
+}
 
 if($TargetType -eq "Unix"){
-#Write-Host @FailedParams "Unix script is WIP... Exiting.";
-#exit
-#$UnixUser = 'e006557'
 $UnixUser = Read-Host -Prompt 'Provide the Unix user name:'
 
 foreach ($Comp in $targets){
@@ -158,23 +159,26 @@ $connection = Test-NetConnection -ComputerName $Comp -Port $TargetPort
 
 if ($connection.TcpTestSucceeded) {
 	Write-Host "Connectivity exists to $Comp over Port $TargetPort. Creating a session to the host $Comp";
-	$DestFile = $Comp+"_Telnet_Result.txt"
+	$DestFile = $Comp+"_Telnet_Result.csv"
 	$Session = New-PSSession -HostName $Comp -UserName $UnixUser
 
 	#Copy the files to the remote host
-	Write-Host "Copying the script to $Comp..";
-	Copy-Item "hosts.txt" -Destination "\home\$UnixUser\" -ToSession $Session
+	Write-Host @FailedParams "Copying the script to $Comp..";
+	Copy-Item $Input_File -Destination "\home\$UnixUser\" -ToSession $Session
 	Copy-Item $Script -Destination "\home\$UnixUser\" -ToSession $Session
-	Write-Host @SuccessParams "copying the script to $Comp.. IS COMPLETED";
+	Write-Host @SuccessParams "COMPLETED";
 
 	Write-Host "ENTERING THE SESSION to $Comp..";
 	Enter-PSSession $Session
 	Write-Host @SuccessParams "Inside the session of $Comp..";
-	Invoke-Command -Session $Session {chmod +x check_connectiviti.sh}
-	Invoke-Command -Session $Session {./check_connectiviti.sh}
+	Invoke-Command -Session $Session {chmod +x check_connectivity.sh}
+	Invoke-Command -Session $Session {./check_connectivity.sh}
 	Exit-PSSession
-	Copy-Item "\home\$UnixUser\Telnet_Result.txt" -Destination ".\$DestFile" -FromSession $Session
+	Copy-Item "\home\$UnixUser\Telnet_Result.csv" -Destination ".\$DestFile" -FromSession $Session
 	Write-Host @SuccessParams "Successfully copied the results from $Comp";
+	Enter-PSSession $Session
+	Invoke-Command -Session $Session {rm -f check_connectivity.sh Telnet_Input.csv Telnet_Result.csv}
+	Exit-PSSession
 
 	#copy the hosts.txt file
 	#scp hosts.txt check_connectivity.sh $UnixUser@$Comp:/home/$UnixUser/
@@ -189,6 +193,7 @@ if ($connection.TcpTestSucceeded) {
 else {
 	Write-Host @FailedParams "No Connectivity to $Comp over Port $TargetPort. Skipping the Checks from the host $Comp";
 }
+
 }
 }
 
@@ -205,8 +210,8 @@ if ($connection.TcpTestSucceeded) {
 	$DestFile = $Comp+"_Telnet_Result.csv"
 	$Session = New-PSSession -ComputerName $Comp -Credential $Creds
 	Write-Host "Copying the input file to $Comp..";
+	Copy-Item $Input_File -Destination "C:\Users\$env:username\Documents\" -ToSession $Session
 	Copy-Item $Script -Destination "C:\Users\$env:username\Documents\" -ToSession $Session
-	Copy-Item "Telnet_Input.csv" -Destination "C:\Users\$env:username\Documents\" -ToSession $Session
 	Write-Host "Executing script on $Comp..";
 	Invoke-Command -ComputerName $Comp -FilePath .\$Script
 	Copy-Item "C:\Users\$env:username\Documents\Telnet_Result.csv" -Destination $DestFile -FromSession $Session
