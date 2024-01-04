@@ -2,11 +2,12 @@ $TargetType = "Windows"
 $TargetPort = "5985"
 $Input_File = "Telnet_Input.csv"
 $SuccessParams = @{ NoNewLine = $false; ForegroundColor = 'Green' }
-$FailedParams = @{ NoNewLine = $true; ForegroundColor = 'Red' }
+$FailedParams = @{ NoNewLine = $false; ForegroundColor = 'Red' }
+$ProgressParams = @{ NoNewLine = $true; ForegroundColor = 'Blue' }
 
 #Declare CyberArk Component servers
-#$M_CPM_EDN = @("wsapp15260","wsapp15263")
-$M_CPM_EDN = @("wsapp15237","wsapp15260")
+$M_CPM_EDN = @("wsapp15260","wsapp15263")
+#$M_CPM_EDN = @("wsapp15237","wsapp15260")
 $M_CPM_CMN = @("wsapp15238","wsapp15261")
 $CPM_OPNET = @("wsapp15239","wsapp15262")
 
@@ -14,7 +15,8 @@ $M_PSM_EDN = @("wsapp15240","wsapp15263")
 $M_PSM_CMN = @("wsapp15241","wsapp15264")
 $M_PSM_OPNET = @("wsapp15242","wsapp15265")
 
-$M_PSMP_EDN = @("lxclpampsmpedn01","lxexpamnppsmpedn01")
+$M_PSMP_EDN = @("lxclpampsmpedn01","lxclpampsmpedn02")
+#$M_PSMP_EDN = @("lxclpampsmpedn01","lxexpamnppsmpedn01")
 $M_PSMP_CMN = @("lxclpampsmpcmn01","lxexpamnppsmpcmn01")
 $M_PSMP_OPNET = @("lxclpamnppsmpopnet01","lxexpamnppsmpopnet01")
 
