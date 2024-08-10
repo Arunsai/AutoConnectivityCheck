@@ -77,7 +77,7 @@ foreach ($computer in $Computers)
   {
     $testResult = TestTcpConnection -ipAddress $ipAddress -port $Port -timeoutMilliseconds 100
     #$socket = New-Object System.Net.Sockets.TcpClient($ipAddress, $port)
-    $computer.Result1="Success"
+    $computer.Result2="Success"
   }
   catch [Exception]
   {
