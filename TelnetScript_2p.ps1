@@ -1,6 +1,11 @@
-﻿$SourceFile="Telnet_Input.csv"
+$SourceFile="Telnet_Input.csv"
 $ResultFile="Telnet_Result.csv"
 $Computers = Import-csv $SourceFile
+
+$SuccessParams = @{ NoNewLine = $false; ForegroundColor = 'Green' }
+$FailedParams = @{ NoNewLine = $false; ForegroundColor = 'Red' }
+$ProgressParams = @{ NoNewLine = $true; ForegroundColor = 'Blue' }
+$QueryParams = @{ NoNewLine = $false; ForegroundColor = 'Yellow' }
 
 # Functions section
 function PerformDnsLookup {
@@ -41,14 +46,22 @@ function TestTcpConnection {
 }
 
 
-
 foreach ($computer in $Computers)
 {
-  $computer.Computer
-  Write-Host "Connecting to $source on port $port"
+  $target = $computer.Computer
+  $port = $computer.Port1
+
+  if ($computer.Computer -as [ipaddress]) {
+    $ipAddress = $computer.Computer
+} else {
+    $ipAddress = PerformDnsLookup -hostname $target
+}
+
+  Write-Host @ProgressParams "Connecting to $target on port $port...."
   try
   {
-    $socket = New-Object System.Net.Sockets.TcpClient($computer.Computer, $computer.Port1)
+    $testResult = TestTcpConnection -ipAddress $ipAddress -port $Port -timeoutMilliseconds 100
+    #$socket = New-Object System.Net.Sockets.TcpClient($ipAddress, $port)
     $computer.Result1="Success"
   }
   catch [Exception]
@@ -57,10 +70,14 @@ foreach ($computer in $Computers)
     Write-Host $_.Exception.Message
     $computer.Result1="Failed"
   }
-   try
+
+  $port = $computer.Port2
+  Write-Host @ProgressParams "Connecting to $target on port $port...."
+  try
   {
-    $socket = New-Object System.Net.Sockets.TcpClient($computer.Computer, $computer.Port2)
-    $computer.Result2="Success"
+    $testResult = TestTcpConnection -ipAddress $ipAddress -port $Port -timeoutMilliseconds 100
+    #$socket = New-Object System.Net.Sockets.TcpClient($ipAddress, $port)
+    $computer.Result1="Success"
   }
   catch [Exception]
   {
@@ -68,8 +85,8 @@ foreach ($computer in $Computers)
     Write-Host $_.Exception.Message
     $computer.Result2="Failed"
   }
-
  
+
 }
 Write-host "Done"
- $Computers|export-csv $ResultFile
+$Computers|export-csv $ResultFile
